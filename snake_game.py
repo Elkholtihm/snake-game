@@ -18,7 +18,7 @@ fenetre  = curses.newwin(longeur, largeur, 0, 0)
 fenetre.keypad(1)
 
 #le délai de mise à jour de l'écran
-fenetre.timeout(100)
+fenetre.timeout(50)
 
 
 #la position initial du serpent
@@ -31,29 +31,21 @@ serpent = [
     [y_serpent, x_serpent-2]
 ]
 
-def next_mov(next_key, key):
-    if next_key == curses.KEY_DOWN and key !=curses.KEY_UP:
-        fenetre.addch(serpent[2][0], serpent[2][1], ' ')
-        serpent[2] = serpent[1].copy()
-        serpent[1] = serpent[0].copy()
+def next_mov(next_key, key): 
+    fenetre.addch(serpent[-1][0], serpent[-1][1], ' ')
+    for i in range(len(serpent)-1, 0, -1):
+        serpent[i] = serpent[i-1].copy()
+
+    if next_key == curses.KEY_DOWN:
         serpent[0][0] += 1
 
-    elif next_key == curses.KEY_UP and key != curses.KEY_DOWN:
-        fenetre.addch(serpent[2][0], serpent[2][1], ' ')
-        serpent[2] = serpent[1].copy()
-        serpent[1] = serpent[0].copy()
+    elif next_key == curses.KEY_UP:
         serpent[0][0] -= 1
 
-    elif next_key == curses.KEY_LEFT and key != curses.KEY_RIGHT:
-        fenetre.addch(serpent[2][0], serpent[2][1], ' ')       
-        serpent[2] = serpent[1].copy()
-        serpent[1] = serpent[0].copy()
-        serpent[0][1] -= 1 
-        
-    elif next_key == curses.KEY_RIGHT and key != curses.KEY_LEFT:
-        fenetre.addch(serpent[2][0], serpent[2][1], ' ')
-        serpent[2] = serpent[1].copy()
-        serpent[1] = serpent[0].copy()
+    elif next_key == curses.KEY_LEFT:
+        serpent[0][1] -= 1    
+
+    elif next_key == curses.KEY_RIGHT:
         serpent[0][1] += 1
         
 #position initial du nouritture
@@ -71,18 +63,27 @@ while True:
     next_key = fenetre.getch()
     if next_key == -1:
         next_key = key
-    fenetre.addch(serpent[0][0], serpent[0][1], curses.ACS_CKBOARD)
-    fenetre.addch(serpent[1][0], serpent[1][1], curses.ACS_CKBOARD)
-    fenetre.addch(serpent[2][0], serpent[2][1], curses.ACS_CKBOARD)
-    next_mov(next_key, key)
-    key = key if next_key == -1 else next_key
+    if (next_key == curses.KEY_DOWN and key !=curses.KEY_UP 
+    or next_key == curses.KEY_UP and key != curses.KEY_DOWN
+    or next_key == curses.KEY_LEFT and key != curses.KEY_RIGHT
+    or next_key == curses.KEY_RIGHT and key != curses.KEY_LEFT
+    ):
+        next_mov(next_key, key)
+        key = key if next_key == -1 else next_key
+
+    for i in serpent:
+        fenetre.addch(i[0], i[1], curses.ACS_CKBOARD)
     
-    if serpent[0][0] in [0, longeur] or serpent[0][1] in [0, largeur] or serpent[0] in serpent[1] or serpent[0] in serpent[2]:
+    if (serpent[0][0] in [0, longeur] 
+        or serpent[0][1] in [0, largeur] 
+        or serpent[0] in serpent[1:]
+        ):
         curses.endwin()
         quit()
 
 
     if serpent[0] == food:
+        serpent.append([serpent[-1][0], serpent[-1][1]-1])
         food = None
         while food is None:
             new_food = [
@@ -90,3 +91,4 @@ while True:
             random.randint(1, largeur-1) ]
             food = new_food if new_food not in serpent else None
         fenetre.addch(food[0], food[1], curses.ACS_PI)
+        
